@@ -1,4 +1,4 @@
-/*! Hammer.JS - v2.0.4 - 2014-09-28
+/*! Hammer.JS - v2.0.5 - 2014-11-10
  * http://hammerjs.github.io/
  *
  * Copyright (c) 2014 Jorik Tangelder;
@@ -320,8 +320,8 @@ function uniqueId() {
  * @returns {DocumentView|Window}
  */
 function getWindowForElement(element) {
-    var doc = element.ownerDocument;
-    return (doc.defaultView || doc.parentWindow);
+    var doc = element.ownerDocument || element;
+    return (doc.defaultView || doc.parentWindow || window);
 }
 
 var MOBILE_REGEX = /mobile|tablet|ip(ad|hone|od)|android/i;
@@ -1114,7 +1114,7 @@ TouchAction.prototype = {
             value = this.compute();
         }
 
-        if (NATIVE_TOUCH_ACTION) {
+        if (NATIVE_TOUCH_ACTION && this.manager.element.style) {
             this.manager.element.style[PREFIXED_TOUCH_ACTION] = value;
         }
         this.actions = value.toLowerCase().trim();
@@ -1981,7 +1981,7 @@ inherit(TapRecognizer, Recognizer, {
     },
 
     emit: function() {
-        if (this.state == STATE_RECOGNIZED ) {
+        if (this.state == STATE_RECOGNIZED) {
             this._input.tapCount = this.count;
             this.manager.emit(this.options.event, this._input);
         }
@@ -2003,7 +2003,7 @@ function Hammer(element, options) {
 /**
  * @const {string}
  */
-Hammer.VERSION = '2.0.4';
+Hammer.VERSION = '2.0.5';
 
 /**
  * default settings
@@ -2055,12 +2055,12 @@ Hammer.defaults = {
      */
     preset: [
         // RecognizerClass, options, [recognizeWith, ...], [requireFailure, ...]
-        [RotateRecognizer, { enable: false }],
-        [PinchRecognizer, { enable: false }, ['rotate']],
-        [SwipeRecognizer,{ direction: DIRECTION_HORIZONTAL }],
-        [PanRecognizer, { direction: DIRECTION_HORIZONTAL }, ['swipe']],
+        [RotateRecognizer, {enable: false}],
+        [PinchRecognizer, {enable: false}, ['rotate']],
+        [SwipeRecognizer, {direction: DIRECTION_HORIZONTAL}],
+        [PanRecognizer, {direction: DIRECTION_HORIZONTAL}, ['swipe']],
         [TapRecognizer],
-        [TapRecognizer, { event: 'doubletap', taps: 2 }, ['tap']],
+        [TapRecognizer, {event: 'doubletap', taps: 2}, ['tap']],
         [PressRecognizer]
     ],
 
@@ -2381,6 +2381,9 @@ Manager.prototype = {
  */
 function toggleCssProps(manager, add) {
     var element = manager.element;
+    if (!element.style) {
+        return;
+    }
     each(manager.options.cssProps, function(value, name) {
         element.style[prefixed(element.style, name)] = add ? value : '';
     });
@@ -2450,11 +2453,7 @@ extend(Hammer, {
     prefixed: prefixed
 });
 
-if (typeof define == TYPE_FUNCTION && define.amd) {
-    define(function() {
-        return Hammer;
-    });
-} else if (typeof module != 'undefined' && module.exports) {
+if (typeof module != 'undefined' && module.exports) {
     module.exports = Hammer;
 } else {
     window[exportName] = Hammer;
